@@ -23,8 +23,7 @@ jobs:
             else
               return 1
             fi
-      - destroy_environment
-         
+
   # configure_infrastructure: 
   #   docker:
   #     - image: python:3.7-alpine3.11

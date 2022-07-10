@@ -1,5 +1,5 @@
 # Exercise - Rollback
-AWSTemplateFormatVersion: 2022-07-09
+AWSTemplateFormatVersion: 2010-09-09
 Description: Create EC2 Instance
 Resources:
   EC2Instance:

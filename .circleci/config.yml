@@ -2,28 +2,66 @@
 # See: https://circleci.com/docs/2.0/configuration-reference
 version: 2.1
 
+commands:
+   # Exercise - Rollback
+   destroy_environment:
+     steps:
+       - run:
+           name: Destroy environment
+           # ${CIRCLE_WORKFLOW_ID} is a Built-in environment variable 
+           # ${CIRCLE_WORKFLOW_ID:0:5} takes the first 5 chars of the variable CIRCLE_CI_WORKFLOW_ID 
+           when: on_fail
+           command: |
+             aws cloudformation delete-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:7}
+
 # Define a job to be invoked later in a workflow to create a Cloud Formation project from the template.
 # Define a job to be invoked later in a workflow to create an Ansible Playbook.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
-  # Exercise: Smoke Testing
-  smoke_test:
-    docker:
-      - image: alpine:latest
-    steps:
-      - run: apk add --update curl
-      - run:
-          name: smoke test
-          command: |
-            URL="https://blog.udacity.com/"
-            # Test if website exists
-            if curl -s --head ${URL} 
-            then
-              return 0
-            else
-              return 1
-            fi
+  create_infrastructure: 
+      docker:
+        - image: amazon/aws-cli
+      steps:
+        - checkout
+        - run:
+            name: Create Cloudformation Stack
+            command: |
+              aws cloudformation deploy \
+                --template-file template.yml \
+                --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
+                --region us-east-1
+        - run: return 1
+        - destroy_environment
+          when: on_fail
+  # # Exercise: Smoke Testing
+  # smoke_test:
+  #   docker:
+  #     - image: alpine:latest
+  #   steps:
+  #     - run:
+  #         name: Test Job
+  #           # Fail the job intentionally to simulate an error
+  #         command: return 1   
+  #     - destroy_environment
 
+  # smoke_test:
+  #   docker:
+  #     - image: alpine:latest
+  #   steps:
+  #     - run: apk add --update curl
+  #     - run:
+  #         name: smoke test
+  #         command: |
+  #           URL="https://blog.udacity.com/"
+  #           # Test if website exists
+  #           if curl -s --head ${URL} 
+  #           then
+  #             return 0
+  #           else
+  #             return 1
+  #           fi
+  #     - destroy_environment
+         
   # configure_infrastructure: 
   #   docker:
   #     - image: python:3.7-alpine3.11
@@ -41,21 +79,7 @@ jobs:
   #         command: |
   #           ansible-playbook -i inventory.txt main.yml
   
-  # create_infrastructure: 
-  #     docker:
-  #       - image: amazon/aws-cli
-  #     steps:
-  #       - checkout
-  #       - run:
-  #           name: Create Cloudformation Stack
-  #           command: |
-  #             aws cloudformation deploy \
-  #               --template-file template.yml \
-  #               --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
-  #               --region us-east-1
-
-
 workflows:
   my_workflow:
       jobs:
-        - smoke_test
+        - create_infrastructure

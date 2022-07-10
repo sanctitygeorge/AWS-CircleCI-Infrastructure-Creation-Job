@@ -3,21 +3,41 @@
 version: 2.1
 
 # Define a job to be invoked later in a workflow to create a Cloud Formation project from the template.
+# Define a job to be invoked later in a workflow to create an Ansible Playbook.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
-  create_infrastructure: 
-      docker:
-        - image: amazon/aws-cli
-      steps:
-        - checkout
-        - run:
-            name: Create Cloudformation Stack
-            command: |
-              aws cloudformation deploy \
-                --template-file template.yml \
-                --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
-                --region us-east-1
+  # Exercise: Config and Deployment
+configure_infrastructure: 
+  docker:
+    - image: python:3.7-alpine3.11
+  steps:
+    - checkout
+    - add_ssh_keys:
+            # You can get this ID in the section where you registered the SSH Key
+            fingerprints: ["cc:75:1a:c8:04:e1:95:2d:1c:75:8a:cd:09:42:7d:4b"] 
+    - run:
+        name: Install Ansible
+        command: |
+          # install the dependencies needed for your playbook
+          apk add --update ansible
+    - run:
+        name: Run Playbook and Configure server
+        command: |
+          ansible-playbook -i inventory.txt main.yml
+  
+  # create_infrastructure: 
+  #     docker:
+  #       - image: amazon/aws-cli
+  #     steps:
+  #       - checkout
+  #       - run:
+  #           name: Create Cloudformation Stack
+  #           command: |
+  #             aws cloudformation deploy \
+  #               --template-file template.yml \
+  #               --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
+  #               --region us-east-1
 workflows:
   my_workflow:
       jobs:
-        - create_infrastructure
+        - configure_infrastructure

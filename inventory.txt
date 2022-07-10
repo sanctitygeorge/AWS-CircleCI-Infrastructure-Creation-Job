@@ -1,0 +1,2 @@
+[all]
+ec2-3-239-238-92.compute-1.amazonaws.com
